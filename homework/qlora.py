@@ -14,36 +14,33 @@ class QLoRALinear(Linear4Bit):
         lora_dim: int,
         group_size: int = 16,
         bias: bool = True,
-        alpha: float = 16.0,
     ) -> None:
         super().__init__(in_features, out_features, bias, group_size)
         self.requires_grad_(False)
 
         # TODO: Implement LoRA, initialize the layers, and make sure they are trainable
         # Keep the LoRA layers in float32
-        for param in self.parameters():
-            param.requires_grad=False
 
+        # safe inputs for forward pass
+        self.lora_dim = lora_dim
+
+        # freeze original parameters
+        for param in self.parameters():
+            param.requires_grad = False
+
+        # Initialize LoRA Stuff
         self.lora_a = torch.nn.Linear(in_features, lora_dim, bias=False, dtype=torch.float32)
         self.lora_b = torch.nn.Linear(lora_dim, out_features, bias=False, dtype=torch.float32)
-
-        self.alpha_div_rank = alpha / lora_dim
-
         torch.nn.init.kaiming_uniform_(self.lora_a.weight)
         torch.nn.init.zeros_(self.lora_b.weight)
-
         self.lora_a.requires_grad_(True)
         self.lora_b.requires_grad_(True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # TODO: Forward. Make sure to cast inputs to self.linear_dtype and the output back to x.dtype
         base_out = super().forward(x)
-
-        #lora forward in float32
-        lora_out = self.lora_b(self.lora_a(x.to(torch.float32)))
-        lora_out = (self.alpha_div_rank * lora_out).to(base_out.dtype)
-
-        return base_out + lora_out
+        lora_out = self.lora_b(self.lora_a(x.to(torch.float32))) / self.lora_dim * 8.0
+        return base_out + lora_out.to(base_out.dtype)
 
 
 class QLoRABigNet(torch.nn.Module):
