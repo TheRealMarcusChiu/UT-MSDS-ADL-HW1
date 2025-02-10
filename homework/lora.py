@@ -15,8 +15,8 @@ class LoRALinear(HalfLinear):
         in_features: int,
         out_features: int,
         lora_dim: int,
-        alpha: float = 16.0,
         bias: bool = True,
+        alpha: float = 16.0,
     ) -> None:
         """
         Implement the LoRALinear layer as described in the homework
