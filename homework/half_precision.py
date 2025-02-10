@@ -19,10 +19,9 @@ class HalfLinear(torch.nn.Linear):
         """
         super().__init__(in_features, out_features, bias)
         self.weight.data = self.weight.data.to(torch.float16)
-        if bias:
-            self.bias.data = self.bias.data.to(torch.float16)
         self.weight.requires_grad_(False)
         if bias:
+            self.bias.data = self.bias.data.to(torch.float16)
             self.bias.requires_grad_(False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
