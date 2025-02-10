@@ -29,6 +29,9 @@ class LoRALinear(HalfLinear):
         # TODO: Implement LoRA, initialize the layers, and make sure they are trainable
         # Keep the LoRA layers in float32
 
+        # safe inputs for forward pass
+        self.lora_dim = lora_dim
+
         # freeze original parameters
         for param in self.parameters():
             param.requires_grad = False
@@ -41,12 +44,10 @@ class LoRALinear(HalfLinear):
         self.lora_a.requires_grad_(True)
         self.lora_b.requires_grad_(True)
 
-        self.alpha_div_rank = 16.0 / lora_dim
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # TODO: Forward. Make sure to cast inputs to self.linear_dtype and the output back to x.dtype
         base_out = super().forward(x.to(torch.float16))
-        lora_out = self.alpha_div_rank * self.lora_b(self.lora_a(x.to(torch.float32)))
+        lora_out = self.lora_b(self.lora_a(x.to(torch.float32))) / self.lora_dim
         return base_out + lora_out.to(base_out.dtype)
 
 
